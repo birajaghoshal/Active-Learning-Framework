@@ -1,6 +1,8 @@
 import config
 
 import os
+import torch
+import numpy as np
 
 
 def log(arguments, message):
@@ -23,3 +25,7 @@ if __name__ == '__main__':
     arguments = config.load_config(description="Active Learning Experiment Framework")
 
     log(arguments, "Arguments Loaded")
+
+    np.random.seed(arguments.seed)
+    torch.manual_seed(arguments.seed)
+    torch.backends.cudnn.enabled = True
