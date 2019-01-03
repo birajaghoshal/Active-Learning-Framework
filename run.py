@@ -36,3 +36,13 @@ if __name__ == '__main__':
 
     # Extracts the training and testing data from the defined dataset.
     x_train, y_train, x_test, y_test = dataset.get_dataset()
+
+    """
+    To conduct Active Learning a binary array is used that states if a peice of data should used within the labeled
+    training data or should be treated as unlabeled data. An initial random sample of data of a specified size if then
+    marked as labelled. 
+    """
+    labeled_indices = np.zeros(len(y_train), dtype=bool)
+    labeled_temp = np.arange(len(y_train))
+    np.random.shuffle(labeled_temp)
+    labeled_indices[labeled_temp[:arguments.init_labels]] = True
