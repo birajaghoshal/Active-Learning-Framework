@@ -1,4 +1,5 @@
 import config
+import dataset
 
 import os
 import torch
@@ -26,6 +27,12 @@ if __name__ == '__main__':
 
     log(arguments, "Arguments Loaded")
 
+    # Sets the seeds for numpy and pytorch to the defined seeds.
     np.random.seed(arguments.seed)
     torch.manual_seed(arguments.seed)
+
+    # Sets CUDNN to be used by torch,
     torch.backends.cudnn.enabled = True
+
+    # Extracts the training and testing data from the defined dataset.
+    x_train, y_train, x_test, y_test = dataset.get_dataset()
