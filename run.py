@@ -1,6 +1,7 @@
 import model
 import config
 import dataset
+import strategy
 
 import os
 import torch
@@ -58,4 +59,37 @@ if __name__ == '__main__':
     """
     model = model.Model()
 
-    
+    query_strategy = None
+
+    # TODO QUERY STRATEGIES GO HERE
+    # TODO COMMENT ALL CODE BELOW HERE
+
+    if query_strategy is None:
+        query_strategy = strategy.Strategy(x_train, y_train, labeled_indices, model, data_handler, arguments)
+        labeled_indices[:] = True
+        arguments.num_iterations = 0
+
+    log(arguments, "\nNumber of initial labeled data: {}".format(list(labeled_indices).count(True)))
+    log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
+    log(arguments, "Number of testing data: {}".format(len(y_test)))
+
+    log(arguments, "\n---------- Iteration 0")
+    query_strategy.train()
+    _, predictions = query_strategy.predict(x_test, y_test)
+    accuracy = np.zeros(arguments.num_iterations + 1)
+    accuracy[0] = 1.0 * (y_test == predictions).sum().item() / len(y_test)
+    log(arguments, "\nTesting Accuracy {}\n\n\n".format(accuracy[0]))
+
+    for iteration in range(1, arguments.num_iterations+1):
+        log(arguments, "\n---------- Iteration {}".format(iteration))
+
+        query_indices = query_strategy.query(arguments.query_labels)
+        labeled_indices[query_indices] = True
+        query_strategy.update(labeled_indices)
+        query_strategy.train()
+
+        _, predictions = query_strategy.predict(x_test, y_test)
+        accuracy[iteration] = 1.0 * (y_test == predictions).sum().item() / len(y_test)
+        log(arguments, "Testing Accuracy {}\n\n\n".format(accuracy[iteration]))
+
+    log(arguments, accuracy)
