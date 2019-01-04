@@ -83,8 +83,7 @@ class Strategy:
         """
         This method will train the model using the training specified as labeled. This method uses a random validation
         set sampled from the labeled training data based on a specified percentage. Early stopping is also used and uses
-        the training loss and the validation loss to determine when to stop training. Once training has stoped the model
-        uses the testing data evaluate the model.
+        the training loss and the validation loss to determine when to stop training.
         """
 
         # Resets the model before training if specified.
@@ -92,8 +91,8 @@ class Strategy:
             self.reset_model()
 
         # Defines the classifier and optimiser for the model.
-        classifier = self.model.to(self.model)
-        optimiser = torch.optim.SGD(classifier.parameters(),
+        self.classifier = self.model.to(self.device)
+        optimiser = torch.optim.SGD(self.classifier.parameters(),
                                     lr=self.arguments.learning_rate,
                                     momentum=self.arguments.momentum)
 
@@ -116,7 +115,7 @@ class Strategy:
         # The main training loop for the model.
         for epoch in range(len(self.arguments.max_epochs)):
             # Sets the model to training mode.
-            classifier.train()
+            self.classifier.train()
 
             # Resets the training loss for the epoch and the batch count.
             train_loss, train_batch = 0, 0
@@ -130,7 +129,7 @@ class Strategy:
                 optimiser.zero_grad()
 
                 # Performs a forward pass with the data through the model.
-                out, _ = classifier(x)
+                out, _ = self.classifier(x)
 
                 # Calculates the loss comparing the output and the labels.
                 loss = functional.cross_entropy(out, y)
@@ -148,27 +147,29 @@ class Strategy:
                 train_batch += 1
 
             # Sets the model to evaluation mode.
-            classifier.eval()
+            self.classifier.eval()
 
             # Resets the epochs validation loss and validation batch count.
             val_loss, val_batch = 0, 0
 
-            # Cycles though the batches of the validation by enumerating through the validation data loader.
-            for batch_index, (x, y, index) in enumerate(val_loader):
-                # Moves the validation data and labels to the device.
-                x, y = x.to(self.device), y.to(self.device)
+            # Sets the model to not calculate gradients when making predictions.
+            with torch.no_grad():
+                # Cycles though the batches of the validation by enumerating through the validation data loader.
+                for batch_index, (x, y, index) in enumerate(val_loader):
+                    # Moves the validation data and labels to the device.
+                    x, y = x.to(self.device), y.to(self.device)
 
-                # Performs a forward pass with the data through the model.
-                out, _ = classifier(x)
+                    # Performs a forward pass with the data through the model.
+                    out, _ = self.classifier(x)
 
-                # Calculates the loss comparing the output and the labels.
-                loss = functional.cross_entropy(out, y)
+                    # Calculates the loss comparing the output and the labels.
+                    loss = functional.cross_entropy(out, y)
 
-                # Adds the batch loss to the epoch loss.
-                val_loss += loss.detach().item()
+                    # Adds the batch loss to the epoch loss.
+                    val_loss += loss.detach().item()
 
-                # Updates the batch count.
-                val_batch += 1
+                    # Updates the batch count.
+                    val_batch += 1
 
             # Adds the training epoch loss and validation loss to the list of losses.
             train_losses.append(train_loss / train_batch)
@@ -198,17 +199,45 @@ class Strategy:
         # Logs when the training finished.
         self.log("Training Finished at Epoch {0}".format(epoch))
 
-    # TODO: Finish the Methods for prediction and to obtain embeddings.
-
     def predict(self, x, y):
         """
-
-        :param x:
-        :param y:
-        :return:
+        This method is used for making predictions on a set of data with the trained model.
+        :param x: The data that the model will make predictions on.
+        :param y: The labels for the data the model is making predictions on.
+        :return: A list of softmax predictions and the predicted labels for each piece of data.
         """
 
-        pass
+        # Creates the data handler fot the inputted data.
+        data_handler = self.data_handler(x, y)
+        test_loader = DataLoader(data_handler, shuffle=False, batch_size=1000)
+
+        # Sets the model to evaluation mode.
+        self.classifier.eval()
+
+        # Creates an empty array or the predictions and predicted label.
+        predicted_label = torch.zeros(len(y), dtype=y.dtype)
+        predictions = torch.zeros([len(y), len(np.unique(y))])
+
+        # Ensures that gradients are not calculated.
+        with torch.no_grad():
+            # Enumerates though the dataset using the data loader.
+            for batch_index, (x, _, index) in enumerate(test_loader):
+                # Moves the data to the specified device.
+                x = x.to(self.device)
+
+                # Performs a forward pass from the model using the data.
+                out, _ = self.classifier(x)
+
+                # Uses a softmax function on the output to return the predictions and adds them to a list.
+                prediction = functional.softmax(out, dim=1)
+                predictions[index] = prediction.cpu()
+
+                # Uses the maz function on the output to return the predicted label and adds them to a list.
+                prediction = out.max(1)[1]
+                predicted_label[index] = prediction.cpu()
+
+        # Returns the lists of predictions and predicted labels.
+        return predictions, predicted_label
 
     def get_embeddings(self, x, y):
         """
