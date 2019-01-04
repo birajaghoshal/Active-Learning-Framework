@@ -241,10 +241,34 @@ class Strategy:
 
     def get_embeddings(self, x, y):
         """
-
-        :param x:
-        :param y:
-        :return:
+        Method for extracting the embedded representation features from the model using the inputted data.
+        :param x: Array of data to have features extracted.
+        :param y: Array of labels for the data.
+        :return: Array of feature representations for the data.
         """
 
-        pass
+        # Creates the data handler for the inputted data.
+        data_handler = self.data_handler(x, y)
+        test_loader = DataLoader(data_handler, shuffle=False, batch_size=1000)
+
+        # Sets the classifier to evaluation mode.
+        self.classifier.eval()
+
+        # Creates an empty array for the embeddings to be extracted.
+        embedding = torch.zeros([len(y), self.classifier.get_embedding_dim()])
+
+        # Ensures that gradients are not calculated.
+        with torch.no_grad():
+            # Enumerates though the dataset using the data loader.
+            for batch_index, (x, _, index) in test_loader:
+                # Moves the data to the specified device.
+                x = x.to(self.device)
+
+                # Performs a forward pass though the model using the data and returns the embeddings.
+                _, embeddings = self.classifier(x)
+
+                # Adds the embeddings to the list.
+                embedding[index] = embeddings.cpu()
+
+        # Returns the list of embeddings.
+        return embedding
