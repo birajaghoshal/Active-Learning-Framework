@@ -1,3 +1,4 @@
+import model
 import config
 import dataset
 
@@ -46,3 +47,5 @@ if __name__ == '__main__':
     labeled_temp = np.arange(len(y_train))
     np.random.shuffle(labeled_temp)
     labeled_indices[labeled_temp[:arguments.init_labels]] = True
+
+    model = model.Model()
