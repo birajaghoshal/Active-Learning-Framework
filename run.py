@@ -2,6 +2,7 @@ import model
 import config
 import dataset
 import strategy
+import query_strategies
 
 import os
 import torch
@@ -61,19 +62,21 @@ if __name__ == '__main__':
 
     query_strategy = None
 
-    # TODO QUERY STRATEGIES GO HERE
-    # TODO COMMENT ALL CODE BELOW HERE
+    if arguments.query_strategy.lower() == "random":
+        query_strategy = query_strategies.RandomSampling(x_train, y_train, labeled_indices, model, data_handler,
+                                                         arguments)
 
     if query_strategy is None:
         query_strategy = strategy.Strategy(x_train, y_train, labeled_indices, model, data_handler, arguments)
         labeled_indices[:] = True
         arguments.num_iterations = 0
 
+    # Logs information about the current active learning iteration.
+    log(arguments, "\n---------- Iteration 0")
     log(arguments, "\nNumber of initial labeled data: {}".format(list(labeled_indices).count(True)))
     log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
     log(arguments, "Number of testing data: {}".format(len(y_test)))
 
-    log(arguments, "\n---------- Iteration 0")
     query_strategy.train()
     _, predictions = query_strategy.predict(x_test, y_test)
     accuracy = np.zeros(arguments.num_iterations + 1)
@@ -81,15 +84,30 @@ if __name__ == '__main__':
     log(arguments, "\nTesting Accuracy {}\n\n\n".format(accuracy[0]))
 
     for iteration in range(1, arguments.num_iterations+1):
-        log(arguments, "\n---------- Iteration {}".format(iteration))
+        # Logs information about the current active learning iteration.
+        log(arguments, "\n---------- Iteration 0")
+        log(arguments, "\nNumber of initial labeled data: {}".format(list(labeled_indices).count(True)))
+        log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
+        log(arguments, "Number of testing data: {}".format(len(y_test)))
 
+        # Runs the specified query method and return the selected indices to be annotated.
         query_indices = query_strategy.query(arguments.query_labels)
+
+        # Update the selected indices as labeled.
         labeled_indices[query_indices] = True
         query_strategy.update(labeled_indices)
+
+        # Train the model with the new training set.
         query_strategy.train()
 
+        # Get the predictions from the testing set.
         _, predictions = query_strategy.predict(x_test, y_test)
+
+        # Calculates the accuracy of the model based on the model's predictions.
         accuracy[iteration] = 1.0 * (y_test == predictions).sum().item() / len(y_test)
+
+        # Logs the testing accuracy.
         log(arguments, "Testing Accuracy {}\n\n\n".format(accuracy[iteration]))
 
+    # Logs the accuracies from all iterations.
     log(arguments, accuracy)
