@@ -113,7 +113,7 @@ class Strategy:
         train_losses, val_losses = [], []
 
         # The main training loop for the model.
-        for epoch in range(len(self.arguments.max_epochs)):
+        for epoch in range(self.arguments.max_epochs):
             # Sets the model to training mode.
             self.classifier.train()
 

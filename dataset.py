@@ -45,7 +45,7 @@ class DataHandler(Dataset):
 
         self.x = x
         self.y = y
-        self.transform = transform
+        self.transform = transform()
 
     def __getitem__(self, index):
         """

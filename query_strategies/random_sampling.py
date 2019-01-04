@@ -16,5 +16,5 @@ class RandomSampling(Strategy):
         :return: Array of indices to data selected to be labeled.
         """
 
-        temp = np.where(self.labeled_indices is False)
+        temp = np.where(self.labeled_indices == False)
         return np.random.choice(temp[0], n, replace=False)

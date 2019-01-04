@@ -20,7 +20,8 @@ def log(arguments, message):
         print(message)
     if arguments.log_file != '':
         if not os.path.isfile(arguments.log_file):
-            os.makedirs(os.path.dirname(arguments.log_file))
+            if not os.path.isdir(os.path.dirname(arguments.log_file)):
+                os.makedirs(os.path.dirname(arguments.log_file))
         print(message, file=open(arguments.log_file, 'a'))
 
 
@@ -73,7 +74,7 @@ if __name__ == '__main__':
 
     # Logs information about the current active learning iteration.
     log(arguments, "\n---------- Iteration 0")
-    log(arguments, "\nNumber of initial labeled data: {}".format(list(labeled_indices).count(True)))
+    log(arguments, "Number of initial labeled data: {}".format(list(labeled_indices).count(True)))
     log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
     log(arguments, "Number of testing data: {}".format(len(y_test)))
 
@@ -84,18 +85,18 @@ if __name__ == '__main__':
     log(arguments, "\nTesting Accuracy {}\n\n\n".format(accuracy[0]))
 
     for iteration in range(1, arguments.num_iterations+1):
-        # Logs information about the current active learning iteration.
-        log(arguments, "\n---------- Iteration 0")
-        log(arguments, "\nNumber of initial labeled data: {}".format(list(labeled_indices).count(True)))
-        log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
-        log(arguments, "Number of testing data: {}".format(len(y_test)))
-
         # Runs the specified query method and return the selected indices to be annotated.
         query_indices = query_strategy.query(arguments.query_labels)
 
         # Update the selected indices as labeled.
         labeled_indices[query_indices] = True
         query_strategy.update(labeled_indices)
+
+        # Logs information about the current active learning iteration.
+        log(arguments, "\n---------- Iteration " + str(iteration))
+        log(arguments, "Number of initial labeled data: {}".format(list(labeled_indices).count(True)))
+        log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
+        log(arguments, "Number of testing data: {}".format(len(y_test)))
 
         # Train the model with the new training set.
         query_strategy.train()
