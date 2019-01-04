@@ -1,3 +1,5 @@
 
 .idea/Active-Learning-Framework.iml
 *.xml
+*.pyc
+*.pyc
