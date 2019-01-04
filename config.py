@@ -46,6 +46,9 @@ def load_config(description):
                         help="The number of data that should be labelled each iteration.")
     parser.add_argument("--num_iterations", type=int, default=int(config["active_learning"]["num_iterations"]),
                         help="The number of iterations the active learner should run for.")
+    parser.add_argument("--reset_model", action="store_true",
+                        default=config["active_learning"]["reset_model"].lower() == "true",
+                        help="Reset the weights of the model betwen active learning iterations.")
 
     # Model Parameters
     parser.add_argument("--val_per", type=float, default=float(config["model"]["val_per"]),
