@@ -42,3 +42,11 @@ class Model(nn.Module):
 
         # Method outputs the final output from the model and a intermediate output.
         return out, fc1
+
+    def get_embedding_dim(self):
+        """
+        Method that is used to get the size of the immediate output from the model.
+        :return: An integer representing the size of the intermediate output.
+        """
+
+        return 50

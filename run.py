@@ -37,6 +37,7 @@ if __name__ == '__main__':
 
     # Extracts the training and testing data from the defined dataset.
     x_train, y_train, x_test, y_test = dataset.get_dataset()
+    data_handler = dataset.DataHandler
 
     """
     To conduct Active Learning a binary array is used that states if a peice of data should used within the labeled
@@ -48,4 +49,13 @@ if __name__ == '__main__':
     np.random.shuffle(labeled_temp)
     labeled_indices[labeled_temp[:arguments.init_labels]] = True
 
+    """
+    This sets the model that will be used within the active learning experiments this can be replaced by any other
+    pytorch model based of the nn.module class. The forward pass method also needs to include two outputs, the output
+    of the model and an intermediate output from the centre (if not needed it can return None as the second output).
+    Another method needed to be implemented is the get_embedding_dim that should specify the size of the
+    intermediate output from the model.
+    """
     model = model.Model()
+
+    
