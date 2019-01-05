@@ -5,7 +5,7 @@ from strategy import Strategy
 
 class RandomSampling(Strategy):
     """
-    The method is for random query method that randomly selects data to be labeled rather than use any
+    The class is for random query method that randomly selects data to be labeled rather than use any
     intelligent methods. It is useful for a baseline test to beat.
     """
 

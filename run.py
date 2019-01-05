@@ -63,10 +63,20 @@ if __name__ == '__main__':
 
     query_strategy = None
 
+    """
+    This is a query strategy is set. Each query strategy should be its own class that inherits from the Strategy base
+    class with a custom query method. If no query method is selected the model will be trained using fully supervised
+    learning.
+    """
+
     if arguments.query_strategy.lower() == "random":
         query_strategy = query_strategies.RandomSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments)
+    if arguments.query_strategy.lower() == "least_confident":
+        query_strategy = query_strategies.LeastConfident(x_train, y_train, labeled_indices, model, data_handler,
+                                                         arguments)
 
+    # If no query strategy the model will be trained in a supervised manner.
     if query_strategy is None:
         query_strategy = strategy.Strategy(x_train, y_train, labeled_indices, model, data_handler, arguments)
         labeled_indices[:] = True
