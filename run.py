@@ -87,6 +87,9 @@ if __name__ == '__main__':
     if arguments.query_strategy.lower() == "kmeans_softmax":
         query_strategy = query_strategies.KMeansSoftmaxSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                                 arguments)
+    if arguments.query_strategy.lower() == "kcentre_embedded":
+        query_strategy = query_strategies.KCentreEmbeddingSampling(x_train, y_train, labeled_indices, model,
+                                                                   data_handler, arguments)
 
     # If no query strategy the model will be trained in a supervised manner.
     if query_strategy is None:
