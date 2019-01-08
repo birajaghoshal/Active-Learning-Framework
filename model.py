@@ -24,6 +24,7 @@ class Model(nn.Module):
         self.fc2 = nn.Linear(50, 10)
 
         self.dropout = dropout
+        self.embedding_size = 0
 
     def forward(self, x):
         """
@@ -45,8 +46,10 @@ class Model(nn.Module):
             fc1 = functional.dropout(fc1, training=self.training)
         out = functional.relu(self.fc2(fc1))
 
-        # Method outputs the final output from the model and a intermediate output.
-        return out, fc1
+        self.embedding_size = out.size()[0]
+
+        # Method outputs the final output from the model.
+        return out
 
     def get_embedding_dim(self):
         """
@@ -54,4 +57,4 @@ class Model(nn.Module):
         :return: An integer representing the size of the intermediate output.
         """
 
-        return 50
+        return self.embedding_size

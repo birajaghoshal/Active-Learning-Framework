@@ -129,7 +129,7 @@ class Strategy:
                 optimiser.zero_grad()
 
                 # Performs a forward pass with the data through the model.
-                out, _ = self.classifier(x)
+                out = self.classifier(x)
 
                 # Calculates the loss comparing the output and the labels.
                 loss = functional.cross_entropy(out, y)
@@ -160,7 +160,7 @@ class Strategy:
                     x, y = x.to(self.device), y.to(self.device)
 
                     # Performs a forward pass with the data through the model.
-                    out, _ = self.classifier(x)
+                    out = self.classifier(x)
 
                     # Calculates the loss comparing the output and the labels.
                     loss = functional.cross_entropy(out, y)
@@ -229,7 +229,7 @@ class Strategy:
                 x = x.to(self.device)
 
                 # Performs a forward pass from the model using the data.
-                out, _ = self.classifier(x)
+                out = self.classifier(x)
 
                 # Uses a softmax function on the output to return the predictions and adds them to a list.
                 prediction = functional.softmax(out, dim=1)
@@ -271,7 +271,7 @@ class Strategy:
                 x = x.to(self.device)
 
                 # Performs a forward pass though the model using the data and returns the embeddings.
-                _, embeddings = self.classifier(x)
+                embeddings = self.classifier(x)
 
                 # Adds the embeddings to the list.
                 embedding[index] = embeddings.cpu()

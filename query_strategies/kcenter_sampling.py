@@ -2,7 +2,7 @@ import numpy as np
 from strategy import Strategy
 
 
-class KCentreEmbeddingSampling(Strategy):
+class KCentreGreedySampling(Strategy):
     """
     This class is for K-Centre sampling using the embedded features for active learning. This method uses the model
     trained model to extract features from the data. These features are then covered using the K-Centre cover method

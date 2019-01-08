@@ -3,7 +3,7 @@ from strategy import Strategy
 from sklearn.cluster import KMeans
 
 
-class KMeansEmbeddedSampling(Strategy):
+class KMeansSampling(Strategy):
     """
     This class is for K-Means sampling using the embedded features sampling for active learning. This method uses the
     trained model to extract features for the data. These features are then clustered using the K-Means clustering
@@ -13,7 +13,7 @@ class KMeansEmbeddedSampling(Strategy):
     def query(self, n):
         """
         Method for querying the data to be labeled. This method selects data that are centers of clusters specified by
-        the K-Means clusting method.
+        the K-Means clustering method.
         :param n: Amount of data to query.
         :return: Array of indices to data selected to be labeled.
         """
