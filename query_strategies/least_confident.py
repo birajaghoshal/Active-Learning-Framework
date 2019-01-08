@@ -4,7 +4,7 @@ from strategy import Strategy
 
 class LeastConfident(Strategy):
     """
-    The class is for least confident query method that selects data with the highest uncertainty calculated using the
+    This class is for least confident query method that selects data with the highest uncertainty calculated using the
     least confident method that looks at the highest softmax prediction and selects the values with the lowest values.
     This method is one of the simplest active learning method and is useful for use as a baseline in comparisons with
     other methods.

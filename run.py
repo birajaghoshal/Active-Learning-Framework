@@ -75,6 +75,9 @@ if __name__ == '__main__':
     if arguments.query_strategy.lower() == "least_confident":
         query_strategy = query_strategies.LeastConfident(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments)
+    if arguments.query_strategy.lower() == "margin":
+        query_strategy = query_strategies.MarginSampling(x_train, y_train, labeled_indices, model, data_handler,
+                                                         arguments)
 
     # If no query strategy the model will be trained in a supervised manner.
     if query_strategy is None:
