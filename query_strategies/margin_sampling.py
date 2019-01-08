@@ -4,7 +4,7 @@ from strategy import Strategy
 
 class MarginSampling(Strategy):
     """
-    This class if for the margin based query method that selects data where the two highest predictions have the least
+    This class is for the margin based query method that selects data where the two highest predictions have the least
     difference. This method is a simple method for active learning that could be useful for use as a baseline in
     comparision with other methods.
     """
