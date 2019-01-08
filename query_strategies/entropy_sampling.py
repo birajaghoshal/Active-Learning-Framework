@@ -11,6 +11,10 @@ class EntropySampling(Strategy):
     comparision with other methods.
     """
 
+    def __init__(self, x, y, labeled_indices, model, data_handler, arguments, iterations=1):
+        super(EntropySampling, self).__init__(x, y, labeled_indices, model, data_handler, arguments)
+        self.number_iterations = iterations
+
     def query(self, n):
         """
         Method for querying the data to be labeled. This method selects data with the highest entropy value.
@@ -18,8 +22,18 @@ class EntropySampling(Strategy):
         :return: Array of indices to data selected to be labeled.
         """
 
-        unlabeled_indices = np.array(self.pool_size)[~self.labeled_indices]
-        probabilities, _ = self.predict(self.x[unlabeled_indices], self.y[unlabeled_indices])
+        unlabeled_indices = np.arange(self.pool_size)[~self.labeled_indices]
+        probabilities = []
+
+        for i in range(self.number_iterations):
+            prob = self.predict(self.x[unlabeled_indices], self.y[unlabeled_indices])[0].numpy()
+            probabilities.append(prob)
+
+        if self.number_iterations > 1:
+            probabilities = np.var(np.asarray(probabilities), axis=0)
+
+        probabilities = torch.as_tensor(probabilities)
+
         log_probabilities = torch.log(probabilities)
         uncertainties = (probabilities * log_probabilities).sum(1)
         return unlabeled_indices[uncertainties.sort()[1][:n]]

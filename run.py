@@ -83,11 +83,16 @@ if __name__ == '__main__':
         query_strategy = query_strategies.MarginSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments)
     if arguments.query_strategy.lower() == "margin_dropout":
+        model.dropout = True
         query_strategy = query_strategies.MarginSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments, arguments.dropout_iterations)
     if arguments.query_strategy.lower() == "entropy":
         query_strategy = query_strategies.EntropySampling(x_train, y_train, labeled_indices, model, data_handler,
                                                           arguments)
+    if arguments.query_strategy.lower() == "entropy_dropout":
+        model.dropout = True
+        query_strategy = query_strategies.EntropySampling(x_train, y_train, labeled_indices, model, data_handler,
+                                                          arguments, arguments.dropout_iterations)
     if arguments.query_strategy.lower() == "kmeans_embedded":
         query_strategy = query_strategies.KMeansEmbeddedSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                                  arguments)
@@ -144,3 +149,4 @@ if __name__ == '__main__':
 
     # Logs the accuracies from all iterations.
     log(arguments, accuracy)
+    log(arguments, "\n\n\n\n\n")
