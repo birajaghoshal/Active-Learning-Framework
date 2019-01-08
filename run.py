@@ -82,6 +82,9 @@ if __name__ == '__main__':
     if arguments.query_strategy.lower() == "margin":
         query_strategy = query_strategies.MarginSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments)
+    if arguments.query_strategy.lower() == "margin_dropout":
+        query_strategy = query_strategies.MarginSampling(x_train, y_train, labeled_indices, model, data_handler,
+                                                         arguments, arguments.dropout_iterations)
     if arguments.query_strategy.lower() == "entropy":
         query_strategy = query_strategies.EntropySampling(x_train, y_train, labeled_indices, model, data_handler,
                                                           arguments)

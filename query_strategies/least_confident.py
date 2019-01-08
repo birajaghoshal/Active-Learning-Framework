@@ -29,7 +29,7 @@ class LeastConfident(Strategy):
             prob = self.predict(self.x[unlabeled_indices], self.y[unlabeled_indices])[0].numpy()
             probabilities.append(prob)
 
-        if self.number_iterations > 0:
+        if self.number_iterations > 1:
             probabilities = np.var(np.asarray(probabilities), axis=0)
 
         uncertainties = probabilities.max(1)
