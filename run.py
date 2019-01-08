@@ -93,6 +93,10 @@ if __name__ == '__main__':
         model.dropout = True
         query_strategy = query_strategies.EntropySampling(x_train, y_train, labeled_indices, model, data_handler,
                                                           arguments, arguments.dropout_iterations)
+    if arguments.query_strategy.lower() == "bald":
+        model.dropout = True
+        query_strategy = query_strategies.BALDSampling(x_train, y_train, labeled_indices, model, data_handler,
+                                                       arguments, arguments.dropout_iterations)
     if arguments.query_strategy.lower() == "kmeans_embedded":
         query_strategy = query_strategies.KMeansEmbeddedSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                                  arguments)
