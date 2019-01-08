@@ -49,6 +49,8 @@ def load_config(description):
     parser.add_argument("--reset_model", action="store_true",
                         default=config["active_learning"]["reset_model"].lower() == "true",
                         help="Reset the weights of the model betwen active learning iterations.")
+    parser.add_argument("--dropout_iterations", type=int, default=int(config["active_learning"]["dropout_iterations"]),
+                        help="The number of prediction iterations to be performed that will be averaged.")
 
     # Model Parameters
     parser.add_argument("--val_per", type=float, default=float(config["model"]["val_per"]),

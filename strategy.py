@@ -211,8 +211,11 @@ class Strategy:
         data_handler = self.data_handler(x, y)
         test_loader = DataLoader(data_handler, shuffle=False, batch_size=1000)
 
-        # Sets the model to evaluation mode.
-        self.classifier.eval()
+        # Sets the classifier to evaluation mode or training mode if dropout is selected to be used.
+        if self.model.dropout:
+            self.classifier.train()
+        else:
+            self.classifier.eval()
 
         # Creates an empty array or the predictions and predicted label.
         predicted_label = torch.zeros(len(y), dtype=y.dtype)
@@ -251,8 +254,11 @@ class Strategy:
         data_handler = self.data_handler(x, y)
         test_loader = DataLoader(data_handler, shuffle=False, batch_size=1000)
 
-        # Sets the classifier to evaluation mode.
-        self.classifier.eval()
+        # Sets the classifier to evaluation mode or training mode if dropout is selected to be used.
+        if self.model.dropout:
+            self.classifier.train()
+        else:
+            self.classifier.eval()
 
         # Creates an empty array for the embeddings to be extracted.
         embedding = torch.zeros([len(y), self.classifier.get_embedding_dim()])

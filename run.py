@@ -75,6 +75,10 @@ if __name__ == '__main__':
     if arguments.query_strategy.lower() == "least_confident":
         query_strategy = query_strategies.LeastConfident(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments)
+    if arguments.query_strategy.lower() == "least_confident_dropout":
+        model.dropout = True
+        query_strategy = query_strategies.LeastConfident(x_train, y_train, labeled_indices, model, data_handler,
+                                                         arguments, arguments.dropout_iterations)
     if arguments.query_strategy.lower() == "margin":
         query_strategy = query_strategies.MarginSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                          arguments)

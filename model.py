@@ -9,7 +9,7 @@ class Model(nn.Module):
     or task for the model such as segmentation.
     """
 
-    def __init__(self):
+    def __init__(self, dropout=False):
         """
         The initialiser for the Model class that sets the functions of the models.
         """
@@ -20,9 +20,10 @@ class Model(nn.Module):
         # Defines the functions for each layer in the neural network.
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
+
+        self.dropout = dropout
 
     def forward(self, x):
         """
@@ -34,10 +35,14 @@ class Model(nn.Module):
         """
 
         # Uses the defined functions to perform a forward pass.
-        conv1 = functional.relu(functional.max_pool2d(self.conv1(x), 2))
-        conv2 = functional.relu(functional.max_pool2d(self.conv2_drop(self.conv2(conv1)), 2))
+        conv1 = functional.max_pool2d(functional.relu(self.conv1(x)), 2)
+        conv2 = functional.max_pool2d(functional.relu(self.conv2(conv1)), 2)
+        if self.dropout:
+            conv2 = functional.dropout2d(conv2, training=self.training)
         flat = conv2.view(-1, 320)
         fc1 = functional.relu(self.fc1(flat))
+        if self.dropout:
+            fc1 = functional.dropout(fc1, training=self.training)
         out = functional.relu(self.fc2(fc1))
 
         # Method outputs the final output from the model and a intermediate output.
