@@ -1,10 +1,10 @@
 from strategy import Strategy
 
 import gc
+import torch
 import numpy as np
 import gurobipy as gurobi
 from scipy.spatial import distance_matrix
-from tensorflow.contrib.keras import backend as K
 
 # TODO: Comment and better format everything.
 
@@ -138,16 +138,14 @@ class CoreSetSampling(Strategy):
         return model, graph
 
     def get_distance_matrix(self, x, y):
-        x_input = K.placeholder((x.shape))
-        y_input = K.placeholder(y.shape)
-        dot = K.dot(x_input, K.transpose(y_input))
-        x_norm = K.reshape(K.sum(K.pow(x_input, 2), axis=1), (-1, 1))
-        y_norm = K.reshape(K.sum(K.pow(y_input, 2), axis=1), (1, -1))
-        dist_mat = x_norm + y_norm - 2.0*dot
-        sqrt_dist_mat = K.sqrt(K.clip(dist_mat, min_value=0, max_value=10000))
-        dist_func = K.function([x_input, y_input], [sqrt_dist_mat])
-
-        return dist_func([x, y])[0]
+        x_input = torch.tensor(x)
+        y_input = torch.tensor(y)
+        dot = torch.tensordot(x_input, torch.t(y_input), 1)
+        x_norm = torch.reshape(torch.sum(torch.pow(x_input, 2), dim=1), (-1, 1))
+        y_norm = torch.reshape(torch.sum(torch.pow(y_input, 2), dim=1), (1, -1))
+        dist_mat = x_norm + y_norm - 2.0 * dot
+        sqrt_dist_mat = torch.sqrt(torch.clamp(dist_mat, 0, 10000)).numpy()
+        return sqrt_dist_mat
 
     def get_graph_min(self, embedding, delta):
         print("Getting Graph Minimum...")
