@@ -6,15 +6,17 @@ import gurobipy as gurobi
 from scipy.spatial import distance_matrix
 from tensorflow.contrib.keras import backend as K
 
-# TODO: Fix the embeddings to be a numpy ndarray, fix labelled indices list to be the correct format.
+# TODO: Comment and better format everything.
+
 
 class CoreSetSampling(Strategy):
     def query(self, n):
         unlabeled_indices = np.arange(self.pool_size)[~self.labeled_indices]
-        embeddings = self.get_embeddings(self.x, self.y)
+        labeled_indices = np.arange(self.pool_size)[self.labeled_indices]
+        embeddings = self.get_embeddings(self.x, self.y).numpy()
 
         print("Calculating Greedy K-Center Solution...")
-        new_indices, max_delta = self.greedy_k_center(embeddings[self.labeled_indices],
+        new_indices, max_delta = self.greedy_k_center(embeddings[labeled_indices],
                                                       embeddings[unlabeled_indices], n)
         new_indices = unlabeled_indices[new_indices]
         outlier_count = int(len(self.x) / 10000)
@@ -24,7 +26,7 @@ class CoreSetSampling(Strategy):
         upper_bound = max_delta
         lower_bound = max_delta / 2.0
         print("Building MIP Model...")
-        model, graph = self.mip_model(embeddings, self.labeled_indices, len(self.labeled_indices) + n, upper_bound,
+        model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, upper_bound,
                                       outlier_count, greddy_indices=new_indices)
         model.Params.SubMIPNodes = submipnodes
         points, outliers = model.__data
@@ -41,7 +43,7 @@ class CoreSetSampling(Strategy):
 
                 del model
                 gc.collect()
-                model, graph = self.mip_model(embeddings, self.labeled_indices, len(self.labeled_indices) + n,
+                model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
                                               current_delta, outlier_count, greddy_indices=indices)
                 points, outliers = model.__data
                 model.Params.SubMIPNodes = submipnodes
@@ -53,7 +55,7 @@ class CoreSetSampling(Strategy):
 
                 del model
                 gc.collect()
-                model, graph = self.mip_model(embeddings, self.labeled_indices, len(self.labeled_indices) + n,
+                model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
                                               current_delta, outlier_count, greddy_indices=indices)
                 points, outliers = model.__data
                 model.Params.SubMIPNodes = submipnodes

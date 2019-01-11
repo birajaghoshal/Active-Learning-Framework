@@ -103,7 +103,7 @@ if __name__ == '__main__':
     if arguments.query_strategy.lower() == "kcentre":
         query_strategy = query_strategies.KCentreGreedySampling(x_train, y_train, labeled_indices, model,
                                                                 data_handler, arguments)
-    if arguments.query_straegy.lower() == "core_set":
+    if arguments.query_strategy.lower() == "core_set":
         query_strategy = query_strategies.CoreSetSampling(x_train, y_train, labeled_indices, model, data_handler ,
                                                           arguments)
 

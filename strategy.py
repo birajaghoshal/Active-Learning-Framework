@@ -266,7 +266,7 @@ class Strategy:
         # Ensures that gradients are not calculated.
         with torch.no_grad():
             # Enumerates though the dataset using the data loader.
-            for batch_index, (x, _, index) in test_loader:
+            for batch_index, (x, _, index) in enumerate(test_loader):
                 # Moves the data to the specified device.
                 x = x.to(self.device)
 

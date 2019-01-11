@@ -46,7 +46,7 @@ class Model(nn.Module):
             fc1 = functional.dropout(fc1, training=self.training)
         out = functional.relu(self.fc2(fc1))
 
-        self.embedding_size = out.size()[0]
+        self.embedding_size = out.shape[1]
 
         # Method outputs the final output from the model.
         return out
