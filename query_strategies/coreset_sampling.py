@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import gurobipy as gurobi
 from scipy.spatial import distance_matrix
+from tensorflow.contrib.keras import backend as K
 
 # TODO: Comment and better format everything.
 
@@ -114,22 +115,23 @@ class CoreSetSampling(Strategy):
         model.addConstr(sum(points[i] for i in range(embeddings.shape[0])) == n, "budget")
         neighbors = {}
         graph = {}
-        print("Updating Neighborhoods in MIP Model...")
+        print("Updating Neighborhoods In MIP Model...")
         for i in range(0, embeddings.shape[0], 1000):
             print("At Point " + str(i))
-            if i + 1000 > embeddings.shape[0]:
-                distances = self.get_distance_matrix(embeddings[i:i + 1000], embeddings)
+
+            if i+1000 > embeddings.shape[0]:
+                distances = self.get_distance_matrix(embeddings[i:], embeddings)
                 amount = embeddings.shape[0] - i
             else:
-                distances = self.get_distance_matrix(embeddings[i:i + 1000], embeddings)
+                distances = self.get_distance_matrix(embeddings[i:i+1000], embeddings)
                 amount = 1000
 
             distances = np.reshape(distances, (amount, -1))
-            for j in range(i, i + amount):
-                graph[j] = [(index, distances[j-i, index]) for index in np.reshape(np.where(distances[j-i, :] <= delta), (-1))]
-                neighbors[j] = [points[index] for index in np.reshape(np.where(distances[j-i, :] <= delta), (-1))]
+            for j in range(i, i+amount):
+                graph[j] = [(idx, distances[j-i, idx]) for idx in np.reshape(np.where(distances[j-i, :] <= delta),(-1))]
+                neighbors[j] = [points[idx] for idx in np.reshape(np.where(distances[j-i, :] <= delta),(-1))]
                 neighbors[j].append(outliers[j])
-                model.addConstr(sum(neighbors[j]) >= 1, "converage+outliers")
+                model.addConstr(sum(neighbors[j]) >= 1, "coverage+outliers")
 
         model.__data = points, outliers
         model.Params.MIPFocus = 1
@@ -137,15 +139,27 @@ class CoreSetSampling(Strategy):
 
         return model, graph
 
-    def get_distance_matrix(self, x, y):
-        x_input = torch.tensor(x)
-        y_input = torch.tensor(y)
-        dot = torch.tensordot(x_input, torch.t(y_input), 1)
-        x_norm = torch.reshape(torch.sum(torch.pow(x_input, 2), dim=1), (-1, 1))
-        y_norm = torch.reshape(torch.sum(torch.pow(y_input, 2), dim=1), (1, -1))
+    def get_distance_matrix(self, X, Y):
+        # x_input = torch.tensor(x)
+        # y_input = torch.tensor(y)
+        # dot = torch.tensordot(x_input, torch.t(y_input), 1)
+        # x_norm = torch.reshape(torch.sum(torch.pow(x_input, 2), dim=1), (-1, 1))
+        # y_norm = torch.reshape(torch.sm(torch.pow(y_input, 2), dim=1), (1, -1))
+        # dist_mat = x_norm + y_norm - 2.0 * dot
+        # sqrt_dist_mat = torch.sqrt(torch.clamp(dist_mat, 0, 10000)).numpy()
+        # del dist_mat, x_norm, y_norm, dot, x_input, y_input
+        # gc.collect()
+        # return sqrt_dist_mat
+        x_input = K.placeholder((X.shape))
+        y_input = K.placeholder(Y.shape)
+        dot = K.dot(x_input, K.transpose(y_input))
+        x_norm = K.reshape(K.sum(K.pow(x_input, 2), axis=1), (-1, 1))
+        y_norm = K.reshape(K.sum(K.pow(y_input, 2), axis=1), (1, -1))
         dist_mat = x_norm + y_norm - 2.0 * dot
-        sqrt_dist_mat = torch.sqrt(torch.clamp(dist_mat, 0, 10000)).numpy()
-        return sqrt_dist_mat
+        sqrt_dist_mat = K.sqrt(K.clip(dist_mat, min_value=0, max_value=10000))
+        dist_func = K.function([x_input, y_input], [sqrt_dist_mat])
+
+        return dist_func([X, Y])[0]
 
     def get_graph_min(self, embedding, delta):
         print("Getting Graph Minimum...")
@@ -161,6 +175,7 @@ class CoreSetSampling(Strategy):
             distances = np.reshape(distances, (-1))
             distances[distances < delta] = 10000
             minimum = min(minimum, np.min(distances))
+            gc.collect()
         return minimum
 
     def get_graph_max(self, embedding, delta):
@@ -177,5 +192,5 @@ class CoreSetSampling(Strategy):
             distances = np.reshape(distances, (-1))
             distances[distances > delta] = 0
             maximum = max(maximum, np.max(distances))
-
+            gc.collect()
         return maximum
