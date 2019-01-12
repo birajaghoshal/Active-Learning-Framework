@@ -29,10 +29,10 @@ class CoreSetSampling(Strategy):
         upper_bound = max_delta
         lower_bound = max_delta / 2.0
         print("Building MIP Model...")
-        model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, upper_bound,
+        model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, upper_bound,
                                       outlier_count, greddy_indices=new_indices)
         model.Params.SubMIPNodes = submipnodes
-        points, outliers = model.__data
+        points = model.__data[0]
         model.optimize()
         # indices = [i for i in graph if points[i].x == 1]
 
@@ -54,7 +54,7 @@ class CoreSetSampling(Strategy):
                 gc.collect()
                 model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
                                               current_delta, outlier_count, greddy_indices=indices)
-                points, outliers = model.__data
+                points = model.__data[0]
                 model.Params.SubMIPNodes = submipnodes
             else:
                 print("Optimisation Succeeded!")
@@ -71,7 +71,7 @@ class CoreSetSampling(Strategy):
                 gc.collect()
                 model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
                                               current_delta, outlier_count, greddy_indices=indices)
-                points, outliers = model.__data
+                points = model.__data[0]
                 model.Params.SubMIPNodes = submipnodes
 
             if upper_bound - lower_bound > eps:
@@ -154,7 +154,7 @@ class CoreSetSampling(Strategy):
         model.Params.MIPFocus = 1
         model.params.TIME_LIMIT = 180
 
-        return model, graph
+        return model
 
     def get_distance_matrix(self, x, y):
         x_input = torch.tensor(x)
