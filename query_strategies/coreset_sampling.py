@@ -1,11 +1,13 @@
 from strategy import Strategy
 
+import os
 import gc
 import torch
+import pickle
+import shutil
 import numpy as np
 import gurobipy as gurobi
 from scipy.spatial import distance_matrix
-from tensorflow.contrib.keras import backend as K
 
 # TODO: Comment and better format everything.
 
@@ -32,7 +34,13 @@ class CoreSetSampling(Strategy):
         model.Params.SubMIPNodes = submipnodes
         points, outliers = model.__data
         model.optimize()
-        indices = [i for i in graph if points[i].x == 1]
+        # indices = [i for i in graph if points[i].x == 1]
+
+        indices = []
+        for i in os.listdir("./Graph/"):
+            graph = pickle.load(open("./Graph/" + i, "rb"))
+            indices += [i for i in graph if points[i].x == 1]
+
         current_delta = upper_bound
         while upper_bound - lower_bound > eps:
             print("Upper bound is {ub}, lower bound is {lb}".format(ub=upper_bound, lb=lower_bound))
@@ -52,7 +60,12 @@ class CoreSetSampling(Strategy):
                 print("Optimisation Succeeded!")
                 upper_bound = min(current_delta, self.get_graph_max(embeddings, current_delta))
                 current_delta = (upper_bound + lower_bound) / 2.
-                indices = [i for i in graph if points[i].x == 1]
+                # indices = [i for i in graph if points[i].x == 1]
+
+                indices = []
+                for i in os.listdir("./Graph/"):
+                    graph = pickle.load(open("./Graph/" + i, "rb"))
+                    indices += [i for i in graph if points[i].x == 1]
 
                 del model
                 gc.collect()
@@ -95,6 +108,10 @@ class CoreSetSampling(Strategy):
     def mip_model(self, embeddings, labeled_indices, n, delta, outlier_count, greddy_indices):
         model = gurobi.Model("Core Set Selection")
 
+        if os.path.isdir("./Graph/"):
+            shutil.rmtree("./Graph/")
+        os.mkdir("./Graph/")
+
         points = {}
         outliers = {}
         for i in range(embeddings.shape[0]):
@@ -113,11 +130,10 @@ class CoreSetSampling(Strategy):
         model.addConstr(sum(outliers[i] for i in outliers) <= outlier_count, "budget")
 
         model.addConstr(sum(points[i] for i in range(embeddings.shape[0])) == n, "budget")
-        neighbors = {}
-        graph = {}
         print("Updating Neighborhoods In MIP Model...")
         for i in range(0, embeddings.shape[0], 1000):
             print("At Point " + str(i))
+            graph = {}
 
             if i+1000 > embeddings.shape[0]:
                 distances = self.get_distance_matrix(embeddings[i:], embeddings)
@@ -129,9 +145,10 @@ class CoreSetSampling(Strategy):
             distances = np.reshape(distances, (amount, -1))
             for j in range(i, i+amount):
                 graph[j] = [(idx, distances[j-i, idx]) for idx in np.reshape(np.where(distances[j-i, :] <= delta),(-1))]
-                neighbors[j] = [points[idx] for idx in np.reshape(np.where(distances[j-i, :] <= delta),(-1))]
-                neighbors[j].append(outliers[j])
-                model.addConstr(sum(neighbors[j]) >= 1, "coverage+outliers")
+                neighbors = [points[idx] for idx in np.reshape(np.where(distances[j-i, :] <= delta),(-1))]
+                neighbors.append(outliers[j])
+                model.addConstr(sum(neighbors) >= 1, "coverage+outliers")
+            pickle.dump(graph, open("Graph/graph{0}.p".format(i), "wb"))
 
         model.__data = points, outliers
         model.Params.MIPFocus = 1
@@ -139,27 +156,15 @@ class CoreSetSampling(Strategy):
 
         return model, graph
 
-    def get_distance_matrix(self, X, Y):
-        # x_input = torch.tensor(x)
-        # y_input = torch.tensor(y)
-        # dot = torch.tensordot(x_input, torch.t(y_input), 1)
-        # x_norm = torch.reshape(torch.sum(torch.pow(x_input, 2), dim=1), (-1, 1))
-        # y_norm = torch.reshape(torch.sm(torch.pow(y_input, 2), dim=1), (1, -1))
-        # dist_mat = x_norm + y_norm - 2.0 * dot
-        # sqrt_dist_mat = torch.sqrt(torch.clamp(dist_mat, 0, 10000)).numpy()
-        # del dist_mat, x_norm, y_norm, dot, x_input, y_input
-        # gc.collect()
-        # return sqrt_dist_mat
-        x_input = K.placeholder((X.shape))
-        y_input = K.placeholder(Y.shape)
-        dot = K.dot(x_input, K.transpose(y_input))
-        x_norm = K.reshape(K.sum(K.pow(x_input, 2), axis=1), (-1, 1))
-        y_norm = K.reshape(K.sum(K.pow(y_input, 2), axis=1), (1, -1))
+    def get_distance_matrix(self, x, y):
+        x_input = torch.tensor(x)
+        y_input = torch.tensor(y)
+        dot = torch.tensordot(x_input, torch.t(y_input), 1)
+        x_norm = torch.reshape(torch.sum(torch.pow(x_input, 2), dim=1), (-1, 1))
+        y_norm = torch.reshape(torch.sum(torch.pow(y_input, 2), dim=1), (1, -1))
         dist_mat = x_norm + y_norm - 2.0 * dot
-        sqrt_dist_mat = K.sqrt(K.clip(dist_mat, min_value=0, max_value=10000))
-        dist_func = K.function([x_input, y_input], [sqrt_dist_mat])
-
-        return dist_func([X, Y])[0]
+        sqrt_dist_mat = torch.sqrt(torch.clamp(dist_mat, 0, 10000)).numpy()
+        return sqrt_dist_mat
 
     def get_graph_min(self, embedding, delta):
         print("Getting Graph Minimum...")
