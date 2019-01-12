@@ -31,6 +31,11 @@ class CoreSetSampling(Strategy):
         print("Building MIP Model...")
         model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, upper_bound,
                                       outlier_count, greddy_indices=new_indices)
+        if os.path.isdir("./Nodes"):
+            shutil.rmtree("./Nodes")
+        os.mkdir("./Nodes")
+        model.Params.NodeFileStart = 0.5
+        model.Params.NodeFileDir = "./Nodes"
         model.Params.SubMIPNodes = submipnodes
         points = model.__data[0]
         model.optimize()
@@ -52,9 +57,14 @@ class CoreSetSampling(Strategy):
 
                 del model
                 gc.collect()
-                model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
+                model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
                                               current_delta, outlier_count, greddy_indices=indices)
                 points = model.__data[0]
+                if os.path.isdir("./Nodes"):
+                    shutil.rmtree("./Nodes")
+                os.mkdir("./Nodes")
+                model.Params.NodeFileStart = 0.5
+                model.Params.NodeFileDir = "./Nodes"
                 model.Params.SubMIPNodes = submipnodes
             else:
                 print("Optimisation Succeeded!")
@@ -69,9 +79,14 @@ class CoreSetSampling(Strategy):
 
                 del model
                 gc.collect()
-                model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
+                model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
                                               current_delta, outlier_count, greddy_indices=indices)
                 points = model.__data[0]
+                if os.path.isdir("./Nodes"):
+                    shutil.rmtree("./Nodes")
+                os.mkdir("./Nodes")
+                model.Params.NodeFileStart = 0.5
+                model.Params.NodeFileDir = "./Nodes"
                 model.Params.SubMIPNodes = submipnodes
 
             if upper_bound - lower_bound > eps:
