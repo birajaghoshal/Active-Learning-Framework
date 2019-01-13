@@ -6,3 +6,4 @@ from .bald_sampling import BALDSampling
 from .kmeans_sampling import KMeansSampling
 from .kcenter_sampling import KCentreGreedySampling
 from .coreset_sampling import CoreSetSampling
+from .deep_fool_sampling import DeepFoolSampling
