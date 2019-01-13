@@ -104,8 +104,11 @@ if __name__ == '__main__':
         query_strategy = query_strategies.KCentreGreedySampling(x_train, y_train, labeled_indices, model,
                                                                 data_handler, arguments)
     if arguments.query_strategy.lower() == "core_set":
-        query_strategy = query_strategies.CoreSetSampling(x_train, y_train, labeled_indices, model, data_handler ,
+        query_strategy = query_strategies.CoreSetSampling(x_train, y_train, labeled_indices, model, data_handler,
                                                           arguments)
+    if arguments.query_strategy.lower() == "deep_fool":
+        query_strategy = query_strategies.DeepFoolSampling(x_train, y_train, labeled_indices, model, data_handler,
+                                                           arguments)
 
     # If no query strategy the model will be trained in a supervised manner.
     if query_strategy is None:
