@@ -123,22 +123,29 @@ if __name__ == '__main__':
     log(arguments, "Number of initial unlabeled data: {}".format(len(y_train) - list(labeled_indices).count(True)))
     log(arguments, "Number of testing data: {}".format(len(y_test)))
 
-    query_strategy.train()
-    predictions, prediction_labels = query_strategy.predict(x_test, y_test)
+    # Defines the arrays of metrics.
     accuracy = np.zeros(arguments.num_iterations + 1)
     mca = np.zeros(arguments.num_iterations + 1)
     losses = np.zeros(arguments.num_iterations + 1)
 
+    # Trains the model with the initial annotated data.
+    query_strategy.train()
+    predictions, prediction_labels = query_strategy.predict(x_test, y_test)
+
+    # Calculates testing labels.
     y = []
     for i in range(len(y_test)):
         for j in range(len(y_test[i])):
             y.append(y_test[i][j])
-    y = torch.tensor(y).max(1)[1]
+    y = np.array(y).argmax(1)
 
+    # Adds the metrics to the arrays of metrics.
     accuracy[0] = 1.0 * (y == prediction_labels).sum().item() / len(y)
     cmat = metrics.confusion_matrix(y, prediction_labels)
     mca[0] = np.mean(cmat.diagonal() / cmat.sum(axis=1))
     losses[0] = torch.nn.functional.cross_entropy(predictions, y).item()
+
+    # Logs testing metrics.
     log(arguments, "\nTesting Accuracy: {}".format(accuracy[0]))
     log(arguments, "Testing Mean-Class Accuracy: {}".format(mca[0]))
     log(arguments, "Testing Loss: {}\n\n\n".format(losses[0]))
@@ -162,12 +169,6 @@ if __name__ == '__main__':
 
         # Get the predictions from the testing set.
         predictions, prediction_labels = query_strategy.predict(x_test, y_test)
-
-        y = []
-        for i in range(len(y_test)):
-            for j in range(len(y_test[i])):
-                y.append(y_test[i][j])
-        y = torch.tensor(y).max(1)[1]
 
         # Calculates the accuracy of the model based on the model's predictions.
         accuracy[iteration] = 1.0 * (y == prediction_labels).sum().item() / len(y)
