@@ -7,6 +7,7 @@ import query_strategies
 import os
 import torch
 import numpy as np
+import sklearn.metrics as metrics
 
 
 def log(arguments, message):
@@ -123,10 +124,24 @@ if __name__ == '__main__':
     log(arguments, "Number of testing data: {}".format(len(y_test)))
 
     query_strategy.train()
-    _, predictions = query_strategy.predict(x_test, y_test)
+    predictions, prediction_labels = query_strategy.predict(x_test, y_test)
     accuracy = np.zeros(arguments.num_iterations + 1)
-    accuracy[0] = 1.0 * (y_test == predictions).sum().item() / len(y_test)
-    log(arguments, "\nTesting Accuracy {}\n\n\n".format(accuracy[0]))
+    mca = np.zeros(arguments.num_iterations + 1)
+    losses = np.zeros(arguments.num_iterations + 1)
+
+    y = []
+    for i in range(len(y_test)):
+        for j in range(len(y_test[i])):
+            y.append(y_test[i][j])
+    y = torch.tensor(y).max(1)[1]
+
+    accuracy[0] = 1.0 * (y == prediction_labels).sum().item() / len(y)
+    cmat = metrics.confusion_matrix(y, prediction_labels)
+    mca[0] = np.mean(cmat.diagonal() / cmat.sum(axis=1))
+    losses[0] = torch.nn.functional.cross_entropy(predictions, y).item()
+    log(arguments, "\nTesting Accuracy: {}".format(accuracy[0]))
+    log(arguments, "Testing Mean-Class Accuracy: {}".format(mca[0]))
+    log(arguments, "Testing Loss: {}\n\n\n".format(losses[0]))
 
     for iteration in range(1, arguments.num_iterations+1):
         # Runs the specified query method and return the selected indices to be annotated.
@@ -146,14 +161,27 @@ if __name__ == '__main__':
         query_strategy.train()
 
         # Get the predictions from the testing set.
-        _, predictions = query_strategy.predict(x_test, y_test)
+        predictions, prediction_labels = query_strategy.predict(x_test, y_test)
+
+        y = []
+        for i in range(len(y_test)):
+            for j in range(len(y_test[i])):
+                y.append(y_test[i][j])
+        y = torch.tensor(y).max(1)[1]
 
         # Calculates the accuracy of the model based on the model's predictions.
-        accuracy[iteration] = 1.0 * (y_test == predictions).sum().item() / len(y_test)
+        accuracy[iteration] = 1.0 * (y == prediction_labels).sum().item() / len(y)
+        cmat = metrics.confusion_matrix(y, prediction_labels)
+        mca[iteration] = np.mean(cmat.diagonal() / cmat.sum(axis=1))
+        losses[iteration] = torch.nn.functional.cross_entropy(predictions, y).item()
 
         # Logs the testing accuracy.
-        log(arguments, "Testing Accuracy {}\n\n\n".format(accuracy[iteration]))
+        log(arguments, "\nTesting Accuracy: {}".format(accuracy[iteration]))
+        log(arguments, "Testing Mean-Class Accuracy: {}".format(mca[iteration]))
+        log(arguments, "Testing Loss: {}\n\n\n".format(losses[iteration]))
 
     # Logs the accuracies from all iterations.
-    log(arguments, accuracy)
-    log(arguments, "\n\n\n\n\n")
+    log(arguments, "Accuracy: " + str(accuracy))
+    log(arguments, "Mean-Class Accuracy: " + str(mca))
+    log(arguments, "Loss: " + str(losses))
+    log(arguments, "\n\n\n\n\n\n\n\n\n\n")
