@@ -1,10 +1,7 @@
 from strategy import Strategy
 
-import os
 import gc
 import torch
-import pickle
-import shutil
 import numpy as np
 import gurobipy as gurobi
 from scipy.spatial import distance_matrix
@@ -16,7 +13,10 @@ class CoreSetSampling(Strategy):
     def query(self, n):
         unlabeled_indices = np.arange(self.pool_size)[~self.labeled_indices]
         labeled_indices = np.arange(self.pool_size)[self.labeled_indices]
+
         embeddings = self.get_embeddings(self.x, self.y).numpy()
+
+        count = 0
 
         print("Calculating Greedy K-Center Solution...")
         new_indices, max_delta = self.greedy_k_center(embeddings[labeled_indices],
@@ -29,64 +29,43 @@ class CoreSetSampling(Strategy):
         upper_bound = max_delta
         lower_bound = max_delta / 2.0
         print("Building MIP Model...")
-        model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, upper_bound,
-                                      outlier_count, greddy_indices=new_indices)
-        if os.path.isdir("./Nodes"):
-            shutil.rmtree("./Nodes")
-        os.mkdir("./Nodes")
-        model.Params.NodeFileStart = 0.5
-        model.Params.NodeFileDir = "./Nodes"
+        model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, upper_bound,
+                                      outlier_count, greedy_indices=new_indices)
+
         model.Params.SubMIPNodes = submipnodes
         points = model.__data[0]
         model.optimize()
-        # indices = [i for i in graph if points[i].x == 1]
 
-        indices = []
-        for i in os.listdir("./Graph/"):
-            graph = pickle.load(open("./Graph/" + i, "rb"))
-            indices += [i for i in graph if points[i].x == 1]
+        indices = [i for i in graph if points[i].x == 1]
 
         current_delta = upper_bound
-        while upper_bound - lower_bound > eps:
-            print("Upper bound is {ub}, lower bound is {lb}".format(ub=upper_bound, lb=lower_bound))
+        bound = upper_bound - lower_bound
+        while bound < eps:
+            print("upper bound is {ub}, lower bound is {lb}".format(ub=upper_bound, lb=lower_bound))
             if model.getAttr(gurobi.GRB.Attr.Status) in [gurobi.GRB.INFEASIBLE, gurobi.GRB.TIME_LIMIT]:
-                print("Optimixation Failed - Infeasible!")
+                print("Optimization Failed - Infeasible!")
 
                 lower_bound = max(current_delta, self.get_graph_min(embeddings, current_delta))
-                current_delta = (upper_bound + lower_bound) / 2.
+                current_delta = (upper_bound + lower_bound) / 2.0
 
                 del model
                 gc.collect()
-                model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
-                                              current_delta, outlier_count, greddy_indices=indices)
-                points = model.__data[0]
-                if os.path.isdir("./Nodes"):
-                    shutil.rmtree("./Nodes")
-                os.mkdir("./Nodes")
-                model.Params.NodeFileStart = 0.5
-                model.Params.NodeFileDir = "./Nodes"
+                model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, current_delta,
+                                              outlier_count, greedy_indices=indices)
+                points, outliers = model.__data
                 model.Params.SubMIPNodes = submipnodes
-            else:
-                print("Optimisation Succeeded!")
-                upper_bound = min(current_delta, self.get_graph_max(embeddings, current_delta))
-                current_delta = (upper_bound + lower_bound) / 2.
-                # indices = [i for i in graph if points[i].x == 1]
 
-                indices = []
-                for i in os.listdir("./Graph/"):
-                    graph = pickle.load(open("./Graph/" + i, "rb"))
-                    indices += [i for i in graph if points[i].x == 1]
+            else:
+                print("Optimization Succeeded!")
+                upper_bound = min(current_delta, self.get_graph_max(embeddings, current_delta))
+                current_delta = (upper_bound + lower_bound) / 2.0
+                indices = [i for i in graph if points[i].X == 1]
 
                 del model
                 gc.collect()
-                model = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n,
-                                              current_delta, outlier_count, greddy_indices=indices)
-                points = model.__data[0]
-                if os.path.isdir("./Nodes"):
-                    shutil.rmtree("./Nodes")
-                os.mkdir("./Nodes")
-                model.Params.NodeFileStart = 0.5
-                model.Params.NodeFileDir = "./Nodes"
+                model, graph = self.mip_model(embeddings, labeled_indices, len(labeled_indices) + n, current_delta,
+                                              outlier_count, greedy_indices=indices)
+                points, outliers = model.__data
                 model.Params.SubMIPNodes = submipnodes
 
             if upper_bound - lower_bound > eps:
@@ -120,12 +99,8 @@ class CoreSetSampling(Strategy):
 
         return np.array(greddy_indices, dtype=int), np.max(min_dist)
 
-    def mip_model(self, embeddings, labeled_indices, n, delta, outlier_count, greddy_indices):
+    def mip_model(self, embeddings, labeled_indices, n, delta, outlier_count, greedy_indices):
         model = gurobi.Model("Core Set Selection")
-
-        if os.path.isdir("./Graph/"):
-            shutil.rmtree("./Graph/")
-        os.mkdir("./Graph/")
 
         points = {}
         outliers = {}
@@ -138,17 +113,17 @@ class CoreSetSampling(Strategy):
             outliers[i] = model.addVar(vtype="B", name="outliers_{}".format(i))
             outliers[i].start = 0
 
-        if greddy_indices is not None:
-            for i in greddy_indices:
+        if greedy_indices is not None:
+            for i in greedy_indices:
                 points[i].start = 1.0
 
         model.addConstr(sum(outliers[i] for i in outliers) <= outlier_count, "budget")
 
         model.addConstr(sum(points[i] for i in range(embeddings.shape[0])) == n, "budget")
+        graph = {}
         print("Updating Neighborhoods In MIP Model...")
         for i in range(0, embeddings.shape[0], 1000):
             print("At Point " + str(i))
-            graph = {}
 
             if i+1000 > embeddings.shape[0]:
                 distances = self.get_distance_matrix(embeddings[i:], embeddings)
@@ -163,13 +138,12 @@ class CoreSetSampling(Strategy):
                 neighbors = [points[idx] for idx in np.reshape(np.where(distances[j-i, :] <= delta),(-1))]
                 neighbors.append(outliers[j])
                 model.addConstr(sum(neighbors) >= 1, "coverage+outliers")
-            pickle.dump(graph, open("Graph/graph{0}.p".format(i), "wb"))
 
         model.__data = points, outliers
         model.Params.MIPFocus = 1
         model.params.TIME_LIMIT = 180
 
-        return model
+        return model, graph
 
     def get_distance_matrix(self, x, y):
         x_input = torch.tensor(x)
