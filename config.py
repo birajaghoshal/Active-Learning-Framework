@@ -72,6 +72,11 @@ def load_config(description):
     parser.add_argument("--target", type=float, default=float(config["early_stopping"]["target"]),
                         help="The target for the early stopping method.")
 
+    # Dataset Parameters
+    parser.add_argument("--augmentation", action="store_true",
+                        default=config["dataset"]["augmentation"].lower() == "true",
+                        help="If the dataset should be augmented during training.")
+
     """
     To add new arguments to the ArgumentParser the asrgument needs to be added here and an entry to the config file
     needs to be added. The default value for the argument should be set to the argument from the config file.

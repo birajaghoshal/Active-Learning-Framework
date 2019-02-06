@@ -1,7 +1,9 @@
+import numpy as np
 from PIL import Image
 from torchvision import datasets
 from torchvision import transforms
 from torch.utils.data import Dataset
+from imgaug import augmenters as iaa
 
 
 def get_dataset():
@@ -36,15 +38,22 @@ class DataHandler(Dataset):
     Class for handling the dataset when being used to train a neural network.
     """
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, augmentation=False):
         """
         Initilisation method for the data handler class that sets the initial parameters.
         :param x: An array of data.
         :param y: An array of labels.
         """
 
-        self.x = x
-        self.y = y
+        if augmentation:
+            a = iaa.Sequential([iaa.Fliplr(1.0)]).augment_images(x)
+            b = iaa.Sequential([iaa.Flipud(1.0)]).augment_images(x)
+            c = iaa.Sequential([iaa.GaussianBlur(1.0)]).augment_images(x)
+            d = iaa.Sequential([iaa.ChannelShuffle(1.0)]).augment_images(x)
+            e = iaa.Sequential([iaa.Sharpen(1.0)]).augment_images(x)
+
+            self.x = np.concatenate([x, a, b, c, d, e])
+            self.y = np.concatenate([y, y, y, y, y, y])
         self.transform = transform()
 
     def __getitem__(self, index):

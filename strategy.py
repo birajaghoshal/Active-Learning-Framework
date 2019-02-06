@@ -98,7 +98,7 @@ class Strategy:
 
         # Creates the data handler for the labeled training data.
         labeled_train = np.arange(self.pool_size)[self.labeled_indices]
-        data_handler = self.data_handler(self.x[labeled_train], self.y[labeled_train])
+        data_handler = self.data_handler(self.x[labeled_train], self.y[labeled_train], self.arguments.augmentation)
 
         # Splits the labeled training data into training and validation sets.
         train_handler, val_handler = torch.utils.data.random_split(data_handler,
