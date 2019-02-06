@@ -32,9 +32,10 @@ if __name__ == '__main__':
 
     log(arguments, "Arguments Loaded")
 
-    # Sets the seeds for numpy and pytorch to the defined seeds.
-    np.random.seed(arguments.seed)
-    torch.manual_seed(arguments.seed)
+    # Sets the seeds for numpy and pytorch to the defined seeds unless seed is 0.
+    if arguments.seed != 0:
+        np.random.seed(arguments.seed)
+        torch.manual_seed(arguments.seed)
 
     # Sets CUDNN to be used by torch,
     torch.backends.cudnn.enabled = True
