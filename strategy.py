@@ -132,10 +132,7 @@ class Strategy:
                 out = self.classifier(x)
 
                 # Calculates the loss comparing the output and the labels.
-                loss = functional.cross_entropy(out, y)
-
-                # Adds the batch loss to the epoch loss.
-                train_loss += loss.detach().item()
+                loss = functional.cross_entropy(out, y, torch.tensor(data_handler.weights))
 
                 # Performs a backward pass though the model using the loss
                 loss.backward()
@@ -145,6 +142,9 @@ class Strategy:
 
                 # Updates the batch count.
                 train_batch += 1
+
+                # Adds the batch loss to the epoch loss.
+                train_loss += functional.cross_entropy(out, y).detach().item()
 
             # Sets the model to evaluation mode.
             self.classifier.eval()

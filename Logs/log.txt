@@ -1,0 +1,24 @@
+Arguments Loaded
+
+---------- Iteration 0
+Number of initial labeled data: 100
+Number of initial unlabeled data: 59900
+Number of testing data: 10000
+Arguments Loaded
+
+---------- Iteration 0
+Number of initial labeled data: 100
+Number of initial unlabeled data: 59900
+Number of testing data: 10000
+Arguments Loaded
+
+---------- Iteration 0
+Number of initial labeled data: 100
+Number of initial unlabeled data: 59900
+Number of testing data: 10000
+Arguments Loaded
+
+---------- Iteration 0
+Number of initial labeled data: 100
+Number of initial unlabeled data: 59900
+Number of testing data: 10000

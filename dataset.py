@@ -1,5 +1,7 @@
+import torch
 import numpy as np
 from PIL import Image
+from collections import Counter
 from torchvision import datasets
 from torchvision import transforms
 from torch.utils.data import Dataset
@@ -16,10 +18,10 @@ def get_dataset():
 
     training = datasets.MNIST("./MNIST", train=True, download=True)
     testing = datasets.MNIST("./MNIST", train=False, download=True)
-    x_train = training.train_data
-    y_train = training.train_labels
-    x_test = testing.test_data
-    y_test = testing.test_labels
+    x_train = training.train_data.numpy()
+    y_train = training.train_labels.numpy()
+    x_test = testing.test_data.numpy()
+    y_test = testing.test_labels.numpy()
     return x_train, y_train, x_test, y_test
 
 
@@ -45,6 +47,12 @@ class DataHandler(Dataset):
         :param y: An array of labels.
         """
 
+        self.weights = []
+        counter = Counter(y)
+        max_val = float(max(counter.values()))
+        for i in range(len(np.unique(y))):
+            self.weights.append(max_val / counter[i])
+
         if augmentation:
             a = iaa.Sequential([iaa.Fliplr(1.0)]).augment_images(x)
             b = iaa.Sequential([iaa.Flipud(1.0)]).augment_images(x)
@@ -65,8 +73,9 @@ class DataHandler(Dataset):
 
         x, y = self.x[index], self.y[index]
         if transforms is not None:
-            x = Image.fromarray(x.numpy(), mode='L')
+            x = Image.fromarray(x, mode='L')
             x = self.transform(x)
+
         return x, y, index
 
     def __len__(self):
