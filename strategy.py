@@ -102,8 +102,8 @@ class Strategy:
 
         # Splits the labeled training data into training and validation sets.
         train_handler, val_handler = torch.utils.data.random_split(data_handler,
-                                                                   [int(len(labeled_train)*(1-self.arguments.val_per)),
-                                                                    int(len(labeled_train)*self.arguments.val_per)])
+                                                                   [int(len(data_handler.x)*(1-self.arguments.val_per)),
+                                                                    int(len(data_handler.x)*self.arguments.val_per)])
 
         # Creates data loaders from the data handlers.
         train_loader = DataLoader(train_handler, shuffle=True, batch_size=self.arguments.batch_size)
@@ -113,7 +113,7 @@ class Strategy:
         train_losses, val_losses = [], []
 
         # The main training loop for the model.
-        for epoch in range(self.arguments.max_epochs):
+        for epoch in range(1, self.arguments.max_epochs + 1):
             # Sets the model to training mode.
             self.classifier.train()
 
@@ -218,7 +218,7 @@ class Strategy:
             self.classifier.eval()
 
         # Creates an empty array or the predictions and predicted label.
-        predicted_label = torch.zeros(len(y), dtype=y.dtype)
+        predicted_label = torch.zeros(len(y), dtype=torch.long)
         predictions = torch.zeros([len(y), len(np.unique(y))])
 
         # Ensures that gradients are not calculated.

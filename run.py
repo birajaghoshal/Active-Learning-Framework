@@ -133,18 +133,13 @@ if __name__ == '__main__':
     query_strategy.train()
     predictions, prediction_labels = query_strategy.predict(x_test, y_test)
 
-    # Calculates testing labels.
-    y = []
-    for i in range(len(y_test)):
-        for j in range(len(y_test[i])):
-            y.append(y_test[i][j])
-    y = np.array(y).argmax(1)
-
     # Adds the metrics to the arrays of metrics.
-    accuracy[0] = 1.0 * (y == prediction_labels).sum().item() / len(y)
-    cmat = metrics.confusion_matrix(y, prediction_labels)
+    losses[0] = torch.nn.functional.cross_entropy(predictions, torch.tensor(y_test)).item()
+    predictions, prediction_labels = predictions.numpy(), prediction_labels.numpy()
+    accuracy[0] = 1.0 * (y_test == prediction_labels).sum().item() / len(y_test)
+    cmat = metrics.confusion_matrix(y_test, prediction_labels)
     mca[0] = np.mean(cmat.diagonal() / cmat.sum(axis=1))
-    losses[0] = torch.nn.functional.cross_entropy(predictions, y).item()
+
 
     # Logs testing metrics.
     log(arguments, "\nTesting Accuracy: {}".format(accuracy[0]))

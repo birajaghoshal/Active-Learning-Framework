@@ -62,6 +62,9 @@ class DataHandler(Dataset):
 
             self.x = np.concatenate([x, a, b, c, d, e])
             self.y = np.concatenate([y, y, y, y, y, y])
+        else:
+            self.x = x
+            self.y = y
         self.transform = transform()
 
     def __getitem__(self, index):
